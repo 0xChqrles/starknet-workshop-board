@@ -4,3 +4,11 @@ version = 1
 [[package]]
 name = "board"
 version = "0.1.0"
+dependencies = [
+ "openzeppelin",
+]
+
+[[package]]
+name = "openzeppelin"
+version = "0.13.0"
+source = "git+https://github.com/openzeppelin/cairo-contracts?branch=main#978b4e75209da355667d8954d2450e32bd71fe49"

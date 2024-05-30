@@ -2,7 +2,7 @@
 pub enum LosingStrategy {
     None,
     StealBack,
-    Reveal,
+    Expose,
     Pyrrhus,
 }
 
@@ -10,5 +10,5 @@ pub enum LosingStrategy {
 pub enum ReceivingStrategy {
     None,
     Split,
-    Reveal,
+    Expose,
 }

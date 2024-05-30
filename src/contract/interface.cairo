@@ -8,8 +8,40 @@ pub trait BoardABI<TState> {
     fn next_round(ref self: TState);
 }
 
-#[derive(starknet::Store)]
-pub struct Player {
-    name: felt252,
-    address: ContractAddress,
+#[starknet::interface]
+pub trait IBoard<TState> {
+    fn board_state(self: @TState) -> BoardState;
+
+    fn steal(ref self: TState, name: felt252);
+    fn give(ref self: TState, name: felt252);
+    fn register(ref self: TState, name: felt252);
+    fn next_round(ref self: TState);
+}
+
+#[derive(Drop, Serde)]
+pub struct BoardState {
+    pub players: Array<PlayerState>,
+    pub round: felt252,
+}
+
+#[derive(Drop, Serde)]
+pub struct PlayerState {
+    pub name: felt252,
+    pub exposed_stolen_points: felt252,
+    pub exposed_given_points: felt252,
+    pub points: felt252,
+}
+
+#[derive(Drop, Serde, PartialEq, starknet::Store)]
+pub enum Behaviour {
+    None,
+    Steal: ContractAddress,
+    Give: ContractAddress,
+}
+
+#[derive(Drop, Serde, starknet::Store)]
+pub struct RevealedBehaviour {
+    from: felt252,
+    behaviour: Behaviour,
+    at_round: felt252,
 }
