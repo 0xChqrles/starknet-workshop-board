@@ -1,4 +1,4 @@
-#[derive(Serde)]
+#[derive(Serde, Drop)]
 pub enum LosingStrategy {
     None,
     StealBack,
@@ -6,7 +6,7 @@ pub enum LosingStrategy {
     Pyrrhus,
 }
 
-#[derive(Serde)]
+#[derive(Serde, Drop)]
 pub enum ReceivingStrategy {
     None,
     Split,
