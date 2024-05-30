@@ -1,4 +1,4 @@
-#[derive(Serde, Drop, Store)]
+#[derive(Serde, Drop, starknet::Store)]
 pub enum LosingStrategy {
     None,
     StealBack,
@@ -6,7 +6,7 @@ pub enum LosingStrategy {
     Pyrrhus,
 }
 
-#[derive(Serde, Drop, Store)]
+#[derive(Serde, Drop, starknet::Store)]
 pub enum ReceivingStrategy {
     None,
     Split,
