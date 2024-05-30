@@ -2,19 +2,18 @@
 pub mod Board {
     use core::array::ArrayTrait;
     use core::num::traits::zero::Zero;
-    use board::contract::interface::{IBoard, Behaviour, RevealedBehaviour, BoardState};
+    use board::contract::interface::{IBoard, Behaviour, RevealedBehaviour, BoardState, PlayerState};
     use starknet::{ContractAddress, get_caller_address};
-    use openzeppelin::utils::structs::storage_array::{StorageArray, StorageArrayTrait};
 
     const STARTING_POINTS: felt252 = 100;
 
     #[storage]
     struct Storage {
         // players
-        all_players: StorageArray<ContractAddress>,
         players_count: felt252,
         players_name_to_addr: LegacyMap<felt252, ContractAddress>,
         players_addr_to_name: LegacyMap<ContractAddress, felt252>,
+        players_index_to_addr: LegacyMap<felt252, ContractAddress>,
 
         // rounds
         next_actions: LegacyMap<ContractAddress, Behaviour>,
@@ -24,11 +23,11 @@ pub mod Board {
         // state
         points: LegacyMap<ContractAddress, felt252>,
 
-        stolen_points: felt252,
-        exposed_stolen_points: felt252,
+        stolen_points: LegacyMap<ContractAddress, felt252>,
+        exposed_stolen_points: LegacyMap<ContractAddress, felt252>,
 
-        given_points: felt252,
-        exposed_given_points: felt252,
+        given_points: LegacyMap<ContractAddress, felt252>,
+        exposed_given_points: LegacyMap<ContractAddress, felt252>,
     }
 
     //
@@ -39,9 +38,38 @@ pub mod Board {
     impl BoardImpl of IBoard<ContractState> {
         fn board_state(self: @ContractState) -> BoardState {
             let current_round = self.current_round.read();
+            let players_count = self.players_count.read();
 
+            // get each player infos
+            let mut index = 0;
+            let mut players_states: Array<PlayerState> = array![];
+
+            loop {
+                if index == players_count {
+                    break;
+                }
+
+                let player_address = self.players_index_to_addr.read(index);
+                let name = self.players_addr_to_name.read(player_address);
+                let points = self.points.read(player_address);
+                let exposed_stolen_points = self.exposed_stolen_points.read(player_address);
+                let exposed_given_points = self.exposed_given_points.read(player_address);
+
+                players_states.append(
+                    PlayerState {
+                        name,
+                        points,
+                        exposed_stolen_points,
+                        exposed_given_points,
+                    }
+                );
+
+                index += 1;
+            };
+
+            // return board state
             BoardState {
-                players: array![],
+                players: players_states,
                 round: current_round,
             }
         }
@@ -63,12 +91,6 @@ pub mod Board {
             // assert player is not already registered
             assert(self.players_addr_to_name.read(player_address).is_zero(), 'Player already registered');
 
-            // register player in array
-            let mut all_players = self.all_players.read();
-
-            all_players.append(player_address);
-            self.all_players.write(all_players);
-
             // increase players count
             let players_count = self.players_count.read();
             self.players_count.write(players_count + 1);
@@ -76,6 +98,7 @@ pub mod Board {
             // register player in maps
             self.players_name_to_addr.write(name, player_address);
             self.players_addr_to_name.write(player_address, name);
+            self.players_index_to_addr.write(players_count, player_address);
 
             // distribute starting points
             self.points.write(player_address, STARTING_POINTS);
