@@ -65,7 +65,7 @@ pub mod Board {
                 let exposed_giving = self.exposed_giving.read(player_address);
 
                 players_states
-                    .append(PlayerState { name, points, exposed_stealing, exposed_giving, });
+                    .append(PlayerState { name, address: player_address, points, exposed_stealing, exposed_giving, });
 
                 index += 1;
             };
@@ -258,7 +258,7 @@ pub mod Board {
     // Internal
     //
 
-    #[derive(Drop)]
+    #[derive(Drop, Serde)]
     pub enum BehaviourType {
         Steal,
         Give,
@@ -275,6 +275,9 @@ pub mod Board {
 
             // get recipient addr
             let to = self.players_name_to_addr.read(name);
+
+            // assert player exist
+            assert(to.is_non_zero(), 'Player does not exist');
 
             // get behaviour
             let behaviour = match behaviour_type {

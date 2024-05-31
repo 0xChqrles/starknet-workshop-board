@@ -2,8 +2,8 @@
 pub enum LosingStrategy {
     None,
     StealBack,
-    Expose,
     Fight,
+    Expose,
 }
 
 #[derive(Serde, Drop, starknet::Store)]

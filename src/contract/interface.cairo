@@ -27,6 +27,7 @@ pub struct BoardState {
 #[derive(Drop, Serde)]
 pub struct PlayerState {
     pub name: felt252,
+    pub address: ContractAddress,
     pub exposed_stealing: ExposedBehaviour,
     pub exposed_giving: ExposedBehaviour,
     pub points: felt252,
