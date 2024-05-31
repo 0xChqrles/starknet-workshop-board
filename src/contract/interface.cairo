@@ -27,9 +27,15 @@ pub struct BoardState {
 #[derive(Drop, Serde)]
 pub struct PlayerState {
     pub name: felt252,
-    pub exposed_stolen_points: felt252,
-    pub exposed_given_points: felt252,
+    pub exposed_stealing: ExposedBehaviour,
+    pub exposed_giving: ExposedBehaviour,
     pub points: felt252,
+}
+
+#[derive(Drop, Serde, starknet::Store)]
+pub struct ExposedBehaviour {
+    pub count: felt252,
+    pub exposer: ContractAddress,
 }
 
 #[derive(Drop, Serde, PartialEq, starknet::Store)]
