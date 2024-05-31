@@ -2,9 +2,13 @@
 pub mod Board {
     use core::array::ArrayTrait;
     use core::num::traits::zero::Zero;
-    use board::contract::interface::{IBoard, Behaviour, RevealedBehaviour, BoardState, PlayerState, ExposedBehaviour};
+    use board::contract::interface::{
+        IBoard, Behaviour, RevealedBehaviour, BoardState, PlayerState, ExposedBehaviour
+    };
     use starknet::{ContractAddress, get_caller_address};
-    use board::player::interface::{IReacterDispatcher, IReacterDispatcherTrait, LosingStrategy, ReceivingStrategy};
+    use board::player::interface::{
+        IReacterDispatcher, IReacterDispatcherTrait, LosingStrategy, ReceivingStrategy
+    };
 
     const STARTING_POINTS: felt252 = 100;
     const ROUND_REWARD: felt252 = 10;
@@ -23,18 +27,14 @@ pub mod Board {
         players_name_to_addr: LegacyMap<felt252, ContractAddress>,
         players_addr_to_name: LegacyMap<ContractAddress, felt252>,
         players_index_to_addr: LegacyMap<felt252, ContractAddress>,
-
         // rounds
         next_actions: LegacyMap<ContractAddress, Behaviour>,
         next_actions_count: felt252,
         current_round: felt252,
-
         // state
         points: LegacyMap<ContractAddress, felt252>,
-
         stealing_count: LegacyMap<ContractAddress, felt252>,
         exposed_stealing: LegacyMap<ContractAddress, ExposedBehaviour>,
-
         giving_count: LegacyMap<ContractAddress, felt252>,
         exposed_giving: LegacyMap<ContractAddress, ExposedBehaviour>,
     }
@@ -64,23 +64,14 @@ pub mod Board {
                 let exposed_stealing = self.exposed_stealing.read(player_address);
                 let exposed_giving = self.exposed_giving.read(player_address);
 
-                players_states.append(
-                    PlayerState {
-                        name,
-                        points,
-                        exposed_stealing,
-                        exposed_giving,
-                    }
-                );
+                players_states
+                    .append(PlayerState { name, points, exposed_stealing, exposed_giving, });
 
                 index += 1;
             };
 
             // return board state
-            BoardState {
-                players: players_states,
-                round: current_round,
-            }
+            BoardState { players: players_states, round: current_round, }
         }
 
         fn register(ref self: ContractState, name: felt252) {
@@ -98,7 +89,10 @@ pub mod Board {
             assert(self.players_name_to_addr.read(name).is_zero(), 'Name already registered');
 
             // assert player is not already registered
-            assert(self.players_addr_to_name.read(player_address).is_zero(), 'Player already registered');
+            assert(
+                self.players_addr_to_name.read(player_address).is_zero(),
+                'Player already registered'
+            );
 
             // increase players count
             let players_count = self.players_count.read();
@@ -123,7 +117,10 @@ pub mod Board {
 
         fn next_round(ref self: ContractState) {
             // assert everybody's ready
-            assert(self.players_count.read() == self.next_actions_count.read(), 'Some players are not ready');
+            assert(
+                self.players_count.read() == self.next_actions_count.read(),
+                'Some players are not ready'
+            );
 
             // loop through players actions and execute them
             let mut index = 0;
@@ -140,7 +137,6 @@ pub mod Board {
 
                 match action {
                     Behaviour::None => panic!("Some players are not ready"),
-
                     Behaviour::Steal(recipient_address) => {
                         // increase stealing count
                         let stealing_count = self.stealing_count.read(player_address);
@@ -160,19 +156,21 @@ pub mod Board {
                                 player_points += STEALING_POINTS;
                                 recipient_points -= STEALING_POINTS;
                             },
-
                             LosingStrategy::Expose => {
                                 // exposing strategy
                                 player_points += STEALING_POINTS;
                                 recipient_points -= STEALING_POINTS;
 
                                 // expose
-                                self.exposed_stealing.write(player_address, ExposedBehaviour {
-                                    count: stealing_count + 1,
-                                    exposer: recipient_address,
-                                });
+                                self
+                                    .exposed_stealing
+                                    .write(
+                                        player_address,
+                                        ExposedBehaviour {
+                                            count: stealing_count + 1, exposer: recipient_address,
+                                        }
+                                    );
                             },
-
                             LosingStrategy::StealBack => {
                                 // steal back strategy
                                 let (losed_by_thief, losed_by_victim) = STEALING_POINTS_STEAL_BACK;
@@ -180,7 +178,6 @@ pub mod Board {
                                 player_points -= losed_by_thief;
                                 recipient_points -= losed_by_victim;
                             },
-
                             LosingStrategy::Fight => {
                                 // steal back strategy
                                 let (losed_by_thief, losed_by_victim) = STEALING_POINTS_FIGHT;
@@ -193,7 +190,6 @@ pub mod Board {
                         // update recipient points
                         self.points.write(recipient_address, recipient_points);
                     },
-
                     Behaviour::Give(recipient_address) => {
                         // increase giving count
                         let giving_count = self.giving_count.read(player_address);
@@ -212,18 +208,20 @@ pub mod Board {
                                 // no strategy
                                 recipient_points += GIVING_POINTS;
                             },
-
                             ReceivingStrategy::Expose => {
                                 // exposing strategy
                                 recipient_points += GIVING_POINTS;
 
                                 // expose
-                                self.exposed_giving.write(player_address, ExposedBehaviour {
-                                    count: giving_count + 1,
-                                    exposer: recipient_address,
-                                });
+                                self
+                                    .exposed_giving
+                                    .write(
+                                        player_address,
+                                        ExposedBehaviour {
+                                            count: giving_count + 1, exposer: recipient_address,
+                                        }
+                                    );
                             },
-
                             ReceivingStrategy::Split => {
                                 // split back with the donor
                                 let (earned_by_donor, earned_by_recipient) = GIVING_POINTS_SPLIT;
